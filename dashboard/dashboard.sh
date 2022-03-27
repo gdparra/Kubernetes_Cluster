@@ -9,8 +9,8 @@ msgstopped="Kubernetes Dashboard stopped"
 case $1 in
 start)
    kubectl apply -f $dashboard_yaml >/dev/null 2>&1
-   kubectl apply -f ~/dashboard/dashboard-admin.yaml >/dev/null 2>&1
-   kubectl apply -f ~/dashboard/dashboard-read-only.yaml >/dev/null 2>&1
+   kubectl apply -f ~/Kubernetes_Cluster/dashboard/dashboard-admin.yaml >/dev/null 2>&1
+   kubectl apply -f ~/Kubernetes_Cluster/dashboard/dashboard-read-only.yaml >/dev/null 2>&1
 
    if [ $count = 0 ]; then
       nohup $cmd >/dev/null 2>&1 &
@@ -26,8 +26,8 @@ stop)
       kill -9 $(pgrep -f "$cmd")
    fi
    kubectl delete -f $dashboard_yaml >/dev/null 2>&1
-   kubectl delete -f ~/dashboard/dashboard-admin.yaml >/dev/null 2>&1
-   kubectl delete -f ~/dashboard/dashboard-read-only.yaml >/dev/null 2>&1
+   kubectl delete -f ~/Kubernetes_Cluster/dashboard/dashboard-admin.yaml >/dev/null 2>&1
+   kubectl delete -f ~/Kubernetes_Cluster/dashboard/dashboard-read-only.yaml >/dev/null 2>&1
    echo $msgstopped
    ;;
 
