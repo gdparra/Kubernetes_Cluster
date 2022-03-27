@@ -110,6 +110,7 @@ Resources:
           su ubuntu -c "chmod +x cluster_setup/install_components.sh"
           su ubuntu -c "chmod +x cluster_setup/kube_init.sh"
           su ubuntu -c "chmod +x dashboard/dashboard.sh"
+          su ubuntu -c "chmod +x dashboard/init_dashboard.sh"
           cd cluster_setup
           su ubuntu -c "./install_components.sh"
       SecurityGroupIds:
@@ -138,6 +139,7 @@ Resources:
           su ubuntu -c "chmod +x cluster_setup/install_components.sh"
           su ubuntu -c "chmod +x cluster_setup/kube_init.sh"
           su ubuntu -c "chmod +x dashboard/dashboard.sh"
+          su ubuntu -c "chmod +x dashboard/init_dashboard.sh"
           cd cluster_setup
           su ubuntu -c "./install_components.sh"
       SecurityGroupIds:
