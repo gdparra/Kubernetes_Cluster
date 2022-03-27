@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Deploy Kuberentes Cluster with 1 Master Node and 1 Worker Node
+
+Parameters:
+  InstanceType:
+    Description: Enter m1.quad, m1.medium, or m1.large. Default is m1.quad.
+    Type: String
+    Default: m1.large
+    AllowedValues:
+      - m1.quad
+      - m1.medium
+      - m1.large
+  ImageAMIId:
+    Description: Enter a valid ami image ID
+    Type: String
+    Default: ba0b5b36-6d19-4ee4-b79f-09aceb5a3a3d
+  KeyPairName:
+    Description: Provide stored keypair name
+    Type: String
+    Default: Bebop
+  KubernetesSubnet:
+    Description: Provide the Subnet to be used
+    Type: String
+    Default: 9a6b1997-5ffc-495b-a490-c12701974319
+
+Resources:
+  MasterNodeKubernetesSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: SecurityGroup for Kubernetes Cluster - Master Node
+      SecurityGroupIngress: 
+        - CidrIp: 0.0.0.0/0
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          FromPort: 2379
+          IpProtocol: tcp
+          ToPort: 2380
+        - CidrIp: 0.0.0.0/0
+          FromPort: 6443
+          IpProtocol: tcp
+          ToPort: 6443
+        - CidrIp: 0.0.0.0/0
+          FromPort: 8000
+          IpProtocol: tcp
+          ToPort: 8000
+        - CidrIp: 0.0.0.0/0
+          FromPort: 8001
+          IpProtocol: tcp
+          ToPort: 8001
+        - CidrIp: 0.0.0.0/0
+          FromPort: 8080
+          IpProtocol: tcp
+          ToPort: 8080
+        - CidrIp: 0.0.0.0/0
+          FromPort: 8443
+          IpProtocol: tcp
+          ToPort: 8443
+        - CidrIp: 0.0.0.0/0
+          FromPort: 10250
+          IpProtocol: tcp
+          ToPort: 10250
+        - CidrIp: 0.0.0.0/0
+          FromPort: 10251
+          IpProtocol: tcp
+          ToPort: 10251
+        - CidrIp: 0.0.0.0/0
+          FromPort: 10252
+          IpProtocol: tcp
+          ToPort: 10252
+
+  WorkerNodeKubernetesSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: SecurityGroup for Kubernetes Cluster - Worker Node
+      SecurityGroupIngress: 
+        - CidrIp: 0.0.0.0/0
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          FromPort: 10250
+          IpProtocol: tcp
+          ToPort: 10250
+        - CidrIp: 0.0.0.0/0
+          FromPort: 30000
+          IpProtocol: tcp
+          ToPort: 32767
+
+  WorkerNode:
+    DependsOn: WorkerNodeKubernetesSG
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: { Ref: ImageAMIId }
+      InstanceType: { Ref: InstanceType }
+      KeyName: { Ref: KeyPairName }
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash -xe
+          adduser --disabled-password --gecos "" ubuntu
+          adduser ubuntu sudo
+          cd /home/ubuntu
+          echo pwd
+          su ubuntu -c "git clone git@github.com:gonzalo2kx/Kubernetes_Cluster.git"
+          su ubuntu -c "mkdir ~/.ssh"
+          su ubuntu -c "echo \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDdbIdSXpg2qzkf4HRv3ph1bkI8blimkV0LPpALTkhi4UBK2PuoYpEHxiyq/C4J9CrZXl5suJYxqiX2My57bg+YDxJ7IgkkDpW5oMYoUhr12dkbtPp3Zt7swgFjCniD9Tfv73bhPLEKX0T3CGcs9thOISy55DQBdJaSf3yG2qXvgi7us+bu7GIlWO7VDFdblWQxYeal6PmpXuIG5rK7t6w19dQTcNeZXsNGXsWCA/CWFayoxyXlxYwjs+Snb7LZNXwQ/BxID4N/uPFsCNAD5TmIHuiwot8SGS+TRBuLsF/ivs73AeKbN5VG513Uy1QVCOk8OTnmCio/2u4tzsfU6EqtWhsoBpcc73dW13u0p7680mEozH21tQ9TxXpSxbZEaTzLtrGBi5Kt5T1SRVFSg01GY5u1iKrhKz3LH9wqACPUOm7WBTLjXTKlwC2Sdj1N0+JNr5Qt0zBEbOmbtR2EeGA/7kLcRlDbWIf0+14ex4Oh9afqc7aoqUi4JM4N/9rnPpE= dr.gonzaloparra@Bebop\" > /home/ubuntu/.ssh/authorized_keys"
+          cd Kubernetes_Cluster/
+          su ubuntu -c "sed -i $'s/\r$//' cluster_setup/install_components.sh"
+          su ubuntu -c "chmod +x cluster_setup/install_components.sh"
+          su ubuntu -c "chmod +x cluster_setup/kube_init.sh"
+          su ubuntu -c "chmod +x dashboard/dashboard.sh"
+          cd cluster_setup
+          su ubuntu -c "./install_components.sh"
+      SecurityGroupIds:
+        - { Ref: WorkerNodeKubernetesSG }
+      SubnetId: { Ref: KubernetesSubnet}
+
+  MasterNode:
+    DependsOn: MasterNodeKubernetesSG
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: { Ref: ImageAMIId }
+      InstanceType: { Ref: InstanceType }
+      KeyName: { Ref: KeyPairName }
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash -xe
+          adduser --disabled-password --gecos "" ubuntu
+          adduser ubuntu sudo
+          cd /home/ubuntu
+          echo pwd
+          su ubuntu -c "git clone git@github.com:gonzalo2kx/Kubernetes_Cluster.git"
+          su ubuntu -c "mkdir ~/.ssh"
+          su ubuntu -c "echo \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDdbIdSXpg2qzkf4HRv3ph1bkI8blimkV0LPpALTkhi4UBK2PuoYpEHxiyq/C4J9CrZXl5suJYxqiX2My57bg+YDxJ7IgkkDpW5oMYoUhr12dkbtPp3Zt7swgFjCniD9Tfv73bhPLEKX0T3CGcs9thOISy55DQBdJaSf3yG2qXvgi7us+bu7GIlWO7VDFdblWQxYeal6PmpXuIG5rK7t6w19dQTcNeZXsNGXsWCA/CWFayoxyXlxYwjs+Snb7LZNXwQ/BxID4N/uPFsCNAD5TmIHuiwot8SGS+TRBuLsF/ivs73AeKbN5VG513Uy1QVCOk8OTnmCio/2u4tzsfU6EqtWhsoBpcc73dW13u0p7680mEozH21tQ9TxXpSxbZEaTzLtrGBi5Kt5T1SRVFSg01GY5u1iKrhKz3LH9wqACPUOm7WBTLjXTKlwC2Sdj1N0+JNr5Qt0zBEbOmbtR2EeGA/7kLcRlDbWIf0+14ex4Oh9afqc7aoqUi4JM4N/9rnPpE= dr.gonzaloparra@Bebop\" > /home/ubuntu/.ssh/authorized_keys"
+          cd Kubernetes_Cluster/
+          su ubuntu -c "sed -i $'s/\r$//' cluster_setup/install_components.sh"
+          su ubuntu -c "chmod +x cluster_setup/install_components.sh"
+          su ubuntu -c "chmod +x cluster_setup/kube_init.sh"
+          su ubuntu -c "chmod +x dashboard/dashboard.sh"
+          cd cluster_setup
+          su ubuntu -c "./install_components.sh"
+      SecurityGroupIds:
+        - { Ref: MasterNodeKubernetesSG }
+      SubnetId: {Ref: KubernetesSubnet}
